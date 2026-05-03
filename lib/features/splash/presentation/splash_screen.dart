@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:finan_goal/core/constants/app_colors.dart';
 import 'package:finan_goal/core/constants/app_text_styles.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:finan_goal/features/auth/providers/auth_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
 
   late AnimationController _logoController;
@@ -77,22 +79,25 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSequence() async {
-    // 1. Logo entra
     await Future.delayed(const Duration(milliseconds: 200));
     _logoController.forward();
 
-    // 2. Texto aparece
     await Future.delayed(const Duration(milliseconds: 600));
     _textController.forward();
 
-    // 3. Barra de progreso
     await Future.delayed(const Duration(milliseconds: 400));
     _progressController.forward();
 
-    // 4. Redirigir a login
     await Future.delayed(const Duration(milliseconds: 1800));
+
+    if (!mounted) return;
+
+    // ✅ Verificar sesión activa
+    final repository = ref.read(authRepositoryProvider);
+    final isLoggedIn = await repository.isLoggedIn();
+
     if (mounted) {
-      context.goNamed('login');
+      context.goNamed(isLoggedIn ? 'home' : 'login');
     }
   }
 
@@ -173,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
             height: 280,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.06),
+              color: AppColors.primary.withValues(alpha: 0.06),
             ),
           ),
         ),
@@ -186,7 +191,7 @@ class _SplashScreenState extends State<SplashScreen>
             height: 320,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.04),
+              color: AppColors.primary.withValues(alpha: 0.04),
             ),
           ),
         ),
@@ -211,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen>
             height: 5,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.primary.withOpacity(0.5),
+              color: AppColors.primary.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -235,7 +240,7 @@ class _SplashScreenState extends State<SplashScreen>
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.35),
+                    color: AppColors.primary.withValues(alpha: 0.35),
                     blurRadius: 30,
                     spreadRadius: 0,
                     offset: const Offset(0, 12),
@@ -244,11 +249,11 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               child: const Center(
                 child: Text(
-                  '₡',
+                  '\$',
                   style: TextStyle(
-                    fontSize: 52,
+                    fontSize: 58,
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),

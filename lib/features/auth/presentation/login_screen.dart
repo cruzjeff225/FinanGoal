@@ -227,7 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             borderRadius: BorderRadius.circular(13),
           ),
           child: const Center(
-            child: Text('₡', style: TextStyle(fontSize: 24, color: Colors.white)),
+            child: Text('\$', style: TextStyle(fontSize: 26, color: Colors.white, fontWeight: FontWeight.w900)),
           ),
         ),
         const SizedBox(height: 24),
