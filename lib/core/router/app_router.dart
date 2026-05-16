@@ -8,6 +8,7 @@ import 'package:finan_goal/features/analytics/presentation/analytics_screen.dart
 import 'package:finan_goal/features/profile/presentation/profile_screen.dart';
 import 'package:finan_goal/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:finan_goal/features/transaction/presentation/add_transaction_sheet.dart';
+import 'package:finan_goal/features/goals/screens/goals_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -143,7 +144,7 @@ class AppRouter {
               GoRoute(
                 path: '/goals',
                 name: 'goals',
-                builder: (c, s) => const Center(child: Text('Metas - Proximamente')),
+                builder: (c, s) => const GoalsScreen(),
               ),
             ],
           ),
