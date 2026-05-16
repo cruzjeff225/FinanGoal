@@ -8,8 +8,11 @@ import 'package:finan_goal/features/home/presentation/widgets/balance_card.dart'
 import 'package:finan_goal/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:finan_goal/features/home/presentation/widgets/income_expense_row.dart';
 import 'package:finan_goal/features/home/presentation/widgets/savings_goal_card.dart';
-import 'package:go_router/go_router.dart';
 import 'package:finan_goal/features/transaction/presentation/add_transaction_sheet.dart';
+import 'package:finan_goal/features/transaction/providers/transaction_provider.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../transaction/provider/transaction_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -25,11 +28,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late AnimationController _animController;
   late List<Animation<double>> _fadeAnims;
   late List<Animation<Offset>> _slideAnims;
-
-  // Datos mock — Fase 5 los conectará con SQLite real
-  static const double _balance = 12450.00;
-  static const double _income = 5200;
-  static const double _expense = 2750;
 
   final List<Map<String, dynamic>> _goals = [
     {'emoji': '🏖️', 'name': 'Vacaciones', 'current': 1500.0, 'target': 3000.0},
@@ -105,6 +103,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Datos reales desde los providers
+    final income  = ref.watch(totalIncomeProvider);
+    final expense = ref.watch(totalExpenseProvider);
+    final balance = ref.watch(balanceProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -115,7 +118,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // ── Top bar ───────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -125,33 +127,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ── Balance card ──────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _animated(
                     1,
-                    BalanceCard(balance: _balance, changePercent: 3.2),
+                    BalanceCard(balance: balance, changePercent: 3.2),
                   ),
                 ),
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-              // ── Income / Expense ──────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _animated(
                     2,
-                    IncomeExpenseRow(income: _income, expense: _expense),
+                    IncomeExpenseRow(income: income, expense: expense),
                   ),
                 ),
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
 
-              // ── Goals header ──────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -161,7 +160,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               const SliverToBoxAdapter(child: SizedBox(height: 14)),
 
-              // ── Goals list ────────────────────────────────
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                 sliver: SliverList(
@@ -205,7 +203,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ],
           ),
         ),
-        // Avatar
         Container(
           width: 44,
           height: 44,
@@ -238,9 +235,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Metas de Ahorro 🎯', style: AppTextStyles.displayMedium.copyWith(fontSize: 18)),
+        Text('Metas de Ahorro 🎯',
+            style: AppTextStyles.displayMedium.copyWith(fontSize: 18)),
         GestureDetector(
-          onTap: () {}, // Fase 6 — Metas
+          onTap: () {},
           child: Text(
             'Ver todo',
             style: AppTextStyles.labelLarge.copyWith(
