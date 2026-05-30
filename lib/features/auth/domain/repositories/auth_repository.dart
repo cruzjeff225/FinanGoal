@@ -1,7 +1,7 @@
+import 'package:finan_goal/core/services/api_service.dart';
 import 'package:finan_goal/features/auth/data/auth_local_datasource.dart';
 import 'package:finan_goal/features/auth/domain/models/user_model.dart';
 
-// Resultado tipado para manejar errores sin excepciones
 sealed class AuthResult {
   const AuthResult();
 }
@@ -16,7 +16,6 @@ class AuthFailure extends AuthResult {
   const AuthFailure(this.message);
 }
 
-// ─────────────────────────────────────────────────────────────
 class AuthRepository {
   final AuthLocalDatasource _datasource;
 
@@ -24,17 +23,22 @@ class AuthRepository {
 
   Future<AuthResult> login(String email, String password) async {
     try {
-      final hash = AuthLocalDatasource.hashPassword(password);
-      final user = await _datasource.findUser(email.trim().toLowerCase(), hash);
+      final response = await ApiService.login(email.trim().toLowerCase(), password);
 
-      if (user == null) {
-        return const AuthFailure('Correo o contraseña incorrectos.');
+      if (response.containsKey('token')) {
+        final user = UserModel(
+          id: response['user']['id'],
+          name: response['user']['name'],
+          email: response['user']['email'],
+          passwordHash: '',
+        );
+        await _datasource.saveSession(user, response['token']);
+        return AuthSuccess(user);
+      } else {
+        return AuthFailure(response['message'] ?? 'Error al iniciar sesión.');
       }
-
-      await _datasource.saveSession(user);
-      return AuthSuccess(user);
-    } catch (_) {
-      return const AuthFailure('Ocurrió un error inesperado.');
+    } catch (e) {
+      return const AuthFailure('Error de conexión. Verifica tu red.');
     }
   }
 
@@ -44,24 +48,22 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final normalizedEmail = email.trim().toLowerCase();
+      final response = await ApiService.register(name, email.trim().toLowerCase(), password);
 
-      if (await _datasource.emailExists(normalizedEmail)) {
-        return const AuthFailure('Este correo ya está registrado.');
+      if (response.containsKey('token')) {
+        final user = UserModel(
+          id: response['user']['id'],
+          name: response['user']['name'],
+          email: response['user']['email'],
+          passwordHash: '',
+        );
+        await _datasource.saveSession(user, response['token']);
+        return AuthSuccess(user);
+      } else {
+        return AuthFailure(response['message'] ?? 'Error al registrarte.');
       }
-
-      final user = UserModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name.trim(),
-        email: normalizedEmail,
-        passwordHash: AuthLocalDatasource.hashPassword(password),
-      );
-
-      await _datasource.saveUser(user);
-      await _datasource.saveSession(user);
-      return AuthSuccess(user);
-    } catch (_) {
-      return const AuthFailure('Ocurrió un error al registrarte.');
+    } catch (e) {
+      return const AuthFailure('Error de conexión. Verifica tu red.');
     }
   }
 

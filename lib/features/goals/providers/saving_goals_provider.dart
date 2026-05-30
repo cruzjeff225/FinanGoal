@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/database_helper.dart';
+import 'package:finan_goal/core/services/api_service.dart';
 import '../models/saving_goal.dart';
 
 final savingGoalsProvider = StateNotifierProvider<SavingGoalsNotifier, List<SavingGoal>>((ref) {
@@ -8,38 +8,53 @@ final savingGoalsProvider = StateNotifierProvider<SavingGoalsNotifier, List<Savi
 
 class SavingGoalsNotifier extends StateNotifier<List<SavingGoal>> {
   SavingGoalsNotifier() : super([]) {
-    loadGoals(); // Cargar metas automáticamente al inicializar
+    loadGoals();
   }
 
   Future<void> loadGoals() async {
-    state = await DatabaseHelper.instance.getGoals();
+    try {
+      final data = await ApiService.getGoals();
+      state = data.map((g) => SavingGoal.fromMap(g)).toList();
+    } catch (e) {
+      state = [];
+    }
   }
 
   Future<void> addGoal(SavingGoal goal) async {
-    final id = await DatabaseHelper.instance.insertGoal(goal);
-    state = [...state, goal.copyWith(id: id)];
+    try {
+      final created = await ApiService.createGoal(goal.toMap());
+      state = [...state, SavingGoal.fromMap(created)];
+    } catch (e) {
+      // Error al crear
+    }
   }
 
-  // Actualiza el progreso guardando el nuevo monto ahorrado
-  Future<void> addMoneyToGoal(int id, double amountToAdd) async {
-    final goalIndex = state.indexWhere((g) => g.id == id);
-    if (goalIndex == -1) return;
+  Future<void> addMoneyToGoal(String id, double amountToAdd) async {
+    try {
+      final goalIndex = state.indexWhere((g) => g.id == id);
+      if (goalIndex == -1) return;
 
-    final currentGoal = state[goalIndex];
-    
-    // Sumamos el dinero nuevo a lo que ya estaba ahorrado
-    final newSavedAmount = currentGoal.savedAmount + amountToAdd;
-    
-    // Aseguramos que no sobrepase el monto objetivo visualmente, aunque puedes quitar esto si quieres guardar más.
-    final updatedGoal = currentGoal.copyWith(savedAmount: newSavedAmount);
+      final currentGoal = state[goalIndex];
+      final newSavedAmount = currentGoal.savedAmount + amountToAdd;
+      final updatedGoal = currentGoal.copyWith(savedAmount: newSavedAmount);
 
-    // Guardamos en la base de datos
-    await DatabaseHelper.instance.updateGoal(updatedGoal);
+      await ApiService.updateGoal(id, {'savedAmount': newSavedAmount});
 
-    // Actualizamos el estado de Riverpod
-    state = [
-      for (final goal in state)
-        if (goal.id == id) updatedGoal else goal,
-    ];
+      state = [
+        for (final goal in state)
+          if (goal.id == id) updatedGoal else goal,
+      ];
+    } catch (e) {
+      // Error al actualizar
+    }
+  }
+
+  Future<void> deleteGoal(String id) async {
+    try {
+      await ApiService.deleteGoal(id);
+      state = state.where((g) => g.id != id).toList();
+    } catch (e) {
+      // Error al eliminar
+    }
   }
 }
