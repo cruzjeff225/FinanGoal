@@ -7,15 +7,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Dirección IP local de tu computadora en la red WiFi.
   // Modifica esto si deseas realizar pruebas en tu celular físico conectado al mismo WiFi.
-  static const String _physicalDeviceIp = '192.168.0.9';
+  static const String _physicalDeviceIp = '10.15.2.32';
 
   static String get _base {
     if (kIsWeb) {
       return 'http://localhost:3000/api';
     }
 
-    // Cambiar a 'true' si deseas realizar pruebas en tu celular físico real
-    bool usePhysicalDevice = false;
+    // Cambiado a 'true' para conectar tu celular físico Samsung
+    bool usePhysicalDevice = true;
     if (usePhysicalDevice) {
       return 'http://$_physicalDeviceIp:3000/api';
     }
