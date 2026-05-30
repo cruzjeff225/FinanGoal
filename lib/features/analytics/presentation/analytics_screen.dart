@@ -5,9 +5,6 @@ import 'package:finan_goal/core/constants/app_text_styles.dart';
 import 'package:finan_goal/features/transaction/models/transaction_model.dart';
 import 'package:finan_goal/features/transaction/providers/transaction_provider.dart';
 
-import '../../transaction/models/ransaction_model.dart';
-import '../../transaction/provider/transaction_provider.dart';
-
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 

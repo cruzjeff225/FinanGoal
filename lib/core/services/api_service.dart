@@ -1,9 +1,35 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String _base = 'http://192.168.0.9:3000/api';
+  // Dirección IP local de tu computadora en la red WiFi.
+  // Modifica esto si deseas realizar pruebas en tu celular físico conectado al mismo WiFi.
+  static const String _physicalDeviceIp = '192.168.0.9';
+
+  static String get _base {
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    }
+
+    // Cambiar a 'true' si deseas realizar pruebas en tu celular físico real
+    bool usePhysicalDevice = false;
+    if (usePhysicalDevice) {
+      return 'http://$_physicalDeviceIp:3000/api';
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        // En emuladores de Android de Google, 10.0.2.2 apunta al host de la computadora
+        return 'http://10.0.2.2:3000/api';
+      }
+    } catch (_) {}
+
+    // Simuladores de iOS, Escritorio y navegadores por defecto
+    return 'http://localhost:3000/api';
+  }
 
   // ── Auth ────────────────────────────────────────────────
   static Future<Map<String, dynamic>> register(String name, String email, String password) async {

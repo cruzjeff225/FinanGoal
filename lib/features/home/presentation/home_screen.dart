@@ -5,14 +5,10 @@ import 'package:finan_goal/core/constants/app_colors.dart';
 import 'package:finan_goal/core/constants/app_constants.dart';
 import 'package:finan_goal/core/constants/app_text_styles.dart';
 import 'package:finan_goal/features/home/presentation/widgets/balance_card.dart';
-import 'package:finan_goal/features/home/presentation/widgets/bottom_nav_bar.dart';
 import 'package:finan_goal/features/home/presentation/widgets/income_expense_row.dart';
 import 'package:finan_goal/features/home/presentation/widgets/savings_goal_card.dart';
-import 'package:finan_goal/features/transaction/presentation/add_transaction_sheet.dart';
 import 'package:finan_goal/features/transaction/providers/transaction_provider.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../transaction/provider/transaction_provider.dart';
+import 'package:finan_goal/features/goals/providers/saving_goals_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -29,11 +25,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late List<Animation<double>> _fadeAnims;
   late List<Animation<Offset>> _slideAnims;
 
-  final List<Map<String, dynamic>> _goals = [
-    {'emoji': '🏖️', 'name': 'Vacaciones', 'current': 1500.0, 'target': 3000.0},
-    {'emoji': '🚗', 'name': 'Auto nuevo', 'current': 8000.0, 'target': 25000.0},
-    {'emoji': '🏠', 'name': 'Casa propia', 'current': 3200.0, 'target': 50000.0},
-  ];
+
 
   @override
   void initState() {
@@ -107,6 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final income  = ref.watch(totalIncomeProvider);
     final expense = ref.watch(totalExpenseProvider);
     final balance = ref.watch(balanceProvider);
+    final goals   = ref.watch(savingGoalsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -162,23 +155,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                        (context, index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _animated(
-                        4,
-                        SavingsGoalCard(
-                          emoji: _goals[index]['emoji'],
-                          name: _goals[index]['name'],
-                          current: _goals[index]['current'],
-                          target: _goals[index]['target'],
+                sliver: goals.isEmpty
+                    ? SliverToBoxAdapter(
+                        child: _animated(
+                          4,
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  '🎯',
+                                  style: TextStyle(fontSize: 40),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Sin metas de ahorro aún',
+                                  style: AppTextStyles.labelLarge.copyWith(fontSize: 15),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Crea una en la sección de Metas para empezar a ahorrar.',
+                                  style: AppTextStyles.caption,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _animated(
+                              4,
+                              SavingsGoalCard(
+                                emoji: goals[index].emoji,
+                                name: goals[index].name,
+                                current: goals[index].savedAmount,
+                                target: goals[index].targetAmount,
+                              ),
+                            ),
+                          ),
+                          childCount: goals.length,
                         ),
                       ),
-                    ),
-                    childCount: _goals.length,
-                  ),
-                ),
               ),
             ],
           ),

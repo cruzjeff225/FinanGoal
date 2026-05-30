@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import '../models/ransaction_model.dart';
 import '../models/transaction_model.dart';
 
 class TransactionDatabaseHelper {
@@ -12,7 +11,7 @@ class TransactionDatabaseHelper {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('finangoal_transactions.db');
+    _database = await _initDB('finangoal_transactions_v3.db');
     return _database!;
   }
 
@@ -26,6 +25,7 @@ class TransactionDatabaseHelper {
     await db.execute('''
       CREATE TABLE transactions (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        cloudId     TEXT,
         amount      REAL    NOT NULL,
         description TEXT    NOT NULL,
         category    TEXT    NOT NULL,
@@ -46,8 +46,23 @@ class TransactionDatabaseHelper {
     return result.map((map) => TransactionModel.fromMap(map)).toList();
   }
 
+  Future<int> updateCloudId(int localId, String cloudId) async {
+    final db = await instance.database;
+    return await db.update(
+      'transactions',
+      {'cloudId': cloudId},
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
+  }
+
   Future<int> deleteTransaction(int id) async {
     final db = await instance.database;
     return await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> clearTransactions() async {
+    final db = await instance.database;
+    await db.delete('transactions');
   }
 }

@@ -6,8 +6,8 @@ import 'package:finan_goal/core/constants/app_colors.dart';
 import 'package:finan_goal/core/constants/app_constants.dart';
 import 'package:finan_goal/core/constants/app_text_styles.dart';
 import 'package:finan_goal/features/auth/providers/auth_provider.dart';
-import 'package:finan_goal/features/home/presentation/widgets/bottom_nav_bar.dart';
-import 'package:finan_goal/features/transaction/presentation/add_transaction_sheet.dart';
+import 'package:finan_goal/features/transaction/providers/transaction_provider.dart';
+import 'package:finan_goal/features/goals/providers/saving_goals_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -61,6 +61,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final balance = ref.watch(balanceProvider);
+    final totalTransactions = ref.watch(transactionProvider).length;
+    final totalGoals = ref.watch(savingGoalsProvider).length;
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBody: true,
@@ -90,7 +93,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   const SizedBox(height: 20),
 
                   // Stats rápidas
-                  _buildStatsRow(),
+                  _buildStatsRow(balance, totalTransactions, totalGoals),
                   const SizedBox(height: 20),
 
                   // Menú
@@ -140,16 +143,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(double balance, int transactionsCount, int goalsCount) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _StatBadge(value: '\$12,450', label: 'Balance', color: AppColors.primary),
+          _StatBadge(value: '\$${balance.toStringAsFixed(2)}', label: 'Balance', color: AppColors.primary),
           const SizedBox(width: 10),
-          _StatBadge(value: '24', label: 'Movimientos'),
+          _StatBadge(value: '$transactionsCount', label: 'Movimientos'),
           const SizedBox(width: 10),
-          _StatBadge(value: '3', label: 'Metas', color: AppColors.accent),
+          _StatBadge(value: '$goalsCount', label: 'Metas', color: AppColors.accent),
         ],
       ),
     );

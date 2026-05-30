@@ -6,9 +6,6 @@ import 'package:finan_goal/core/constants/app_text_styles.dart';
 import 'package:finan_goal/features/transaction/models/transaction_model.dart';
 import 'package:finan_goal/features/transaction/providers/transaction_provider.dart';
 
-import '../models/ransaction_model.dart';
-import '../provider/transaction_provider.dart';
-
 const _incomeCategories = [
   '💼 Trabajo',
   '💰 Freelance',
