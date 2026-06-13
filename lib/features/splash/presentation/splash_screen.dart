@@ -96,6 +96,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final repository = ref.read(authRepositoryProvider);
     final isLoggedIn = await repository.isLoggedIn();
 
+    if (isLoggedIn && mounted) {
+      await ref.read(authProvider.notifier).loadSession();
+    }
+
     if (mounted) {
       context.goNamed(isLoggedIn ? 'home' : 'login');
     }

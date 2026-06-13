@@ -6,6 +6,7 @@ class TransactionModel {
   final String category;
   final bool isIncome;
   final DateTime date;
+  final String? notes;
 
   const TransactionModel({
     this.id,
@@ -15,6 +16,7 @@ class TransactionModel {
     required this.category,
     required this.isIncome,
     required this.date,
+    this.notes,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,7 +27,8 @@ class TransactionModel {
       'description': description,
       'category': category,
       'isIncome': isIncome ? 1 : 0,
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
+      'notes': notes,
     };
   }
 
@@ -35,7 +38,8 @@ class TransactionModel {
       'description': description,
       'category': category,
       'isIncome': isIncome,
-      'date': date.toIso8601String(),
+      'date': date.toUtc().toIso8601String(),
+      'notes': notes ?? '',
     };
   }
 
@@ -48,6 +52,7 @@ class TransactionModel {
       category: map['category'],
       isIncome: map['isIncome'] == 1 || map['isIncome'] == true,
       date: DateTime.parse(map['date']),
+      notes: map['notes'],
     );
   }
 
@@ -59,6 +64,7 @@ class TransactionModel {
     String? category,
     bool? isIncome,
     DateTime? date,
+    String? notes,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -68,6 +74,7 @@ class TransactionModel {
       category: category ?? this.category,
       isIncome: isIncome ?? this.isIncome,
       date: date ?? this.date,
+      notes: notes ?? this.notes,
     );
   }
 }

@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   // Dirección IP local de tu computadora en la red WiFi.
   // Modifica esto si deseas realizar pruebas en tu celular físico conectado al mismo WiFi.
-  static const String _physicalDeviceIp = '10.15.2.32';
+  static const String _physicalDeviceIp = '192.168.0.10';
 
   static String get _base {
     if (kIsWeb) {
@@ -20,6 +20,7 @@ class ApiService {
       return 'http://$_physicalDeviceIp:3000/api';
     }
 
+    // ignore: dead_code
     try {
       if (Platform.isAndroid) {
         // En emuladores de Android de Google, 10.0.2.2 apunta al host de la computadora
@@ -27,6 +28,7 @@ class ApiService {
       }
     } catch (_) {}
 
+    // ignore: dead_code
     // Simuladores de iOS, Escritorio y navegadores por defecto
     return 'http://localhost:3000/api';
   }
@@ -108,12 +110,42 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
+  static Future<Map<String, dynamic>> updateTransaction(String id, Map<String, dynamic> data) async {
+    final token = await _token();
+    final res = await http.patch(
+      Uri.parse('$_base/transactions/$id'),
+      headers: _headers(token),
+      body: jsonEncode(data),
+    );
+    return jsonDecode(res.body);
+  }
+
   static Future<void> deleteTransaction(String id) async {
     final token = await _token();
     await http.delete(
       Uri.parse('$_base/transactions/$id'),
       headers: _headers(token),
     );
+  }
+
+  static Future<Map<String, dynamic>> updateProfile(String name, String email) async {
+    final token = await _token();
+    final res = await http.put(
+      Uri.parse('$_base/auth/profile'),
+      headers: _headers(token),
+      body: jsonEncode({'name': name, 'email': email}),
+    );
+    return jsonDecode(res.body);
+  }
+
+  static Future<Map<String, dynamic>> updatePassword(String currentPassword, String newPassword) async {
+    final token = await _token();
+    final res = await http.put(
+      Uri.parse('$_base/auth/password'),
+      headers: _headers(token),
+      body: jsonEncode({'currentPassword': currentPassword, 'newPassword': newPassword}),
+    );
+    return jsonDecode(res.body);
   }
 
   // ── Helpers ─────────────────────────────────────────────

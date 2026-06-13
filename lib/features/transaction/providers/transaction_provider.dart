@@ -84,6 +84,28 @@ class TransactionNotifier extends StateNotifier<List<TransactionModel>> {
     }
   }
 
+  Future<void> updateTransaction(TransactionModel tx) async {
+    if (tx.id == null) return;
+
+    // 1. Actualizar localmente en SQLite
+    await TransactionDatabaseHelper.instance.updateTransaction(tx);
+
+    // Actualizar el estado en memoria
+    state = [
+      for (final t in state)
+        if (t.id == tx.id) tx else t,
+    ];
+
+    // 2. Intentar actualizar remotamente si tiene un cloudId
+    if (tx.cloudId != null && tx.cloudId!.isNotEmpty) {
+      try {
+        await ApiService.updateTransaction(tx.cloudId!, tx.toApiMap());
+      } catch (e) {
+        // Fallo de red silencioso (los cambios locales permanecen en SQLite)
+      }
+    }
+  }
+
   Future<void> deleteTransaction(int localId) async {
     final txIndex = state.indexWhere((t) => t.id == localId);
     if (txIndex == -1) return;

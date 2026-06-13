@@ -92,7 +92,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     child: SlideTransition(position: _slideAnims[index], child: child),
   );
 
-  // Lógica de registro
   Future<void> _onRegister() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
@@ -104,7 +103,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
 
     if (success && mounted) {
-      _showSuccessAndNavigate();
+      final datasource = ref.read(authDatasourceProvider);
+      await datasource.saveSavedCredentials(
+        _emailController.text,
+        _passwordController.text,
+        true,
+      );
+      if (mounted) {
+        _showSuccessAndNavigate();
+      }
     }
   }
 

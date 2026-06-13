@@ -18,7 +18,12 @@ class TransactionDatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
 
   Future _createDB(Database db, int version) async {
@@ -30,9 +35,16 @@ class TransactionDatabaseHelper {
         description TEXT    NOT NULL,
         category    TEXT    NOT NULL,
         isIncome    INTEGER NOT NULL,
-        date        TEXT    NOT NULL
+        date        TEXT    NOT NULL,
+        notes       TEXT
       )
     ''');
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE transactions ADD COLUMN notes TEXT');
+    }
   }
 
   Future<int> insertTransaction(TransactionModel tx) async {
@@ -53,6 +65,16 @@ class TransactionDatabaseHelper {
       {'cloudId': cloudId},
       where: 'id = ?',
       whereArgs: [localId],
+    );
+  }
+
+  Future<int> updateTransaction(TransactionModel tx) async {
+    final db = await instance.database;
+    return await db.update(
+      'transactions',
+      tx.toMap(),
+      where: 'id = ?',
+      whereArgs: [tx.id],
     );
   }
 

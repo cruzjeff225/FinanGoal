@@ -31,9 +31,10 @@ const _expenseCategories = [
 ];
 
 class AddTransactionSheet extends ConsumerStatefulWidget {
-  const AddTransactionSheet({super.key});
+  final TransactionModel? transactionToEdit;
+  const AddTransactionSheet({super.key, this.transactionToEdit});
 
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(BuildContext context, {TransactionModel? transactionToEdit}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -43,7 +44,7 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
         vsync: Navigator.of(context),
         duration: const Duration(milliseconds: 380),
       ),
-      builder: (_) => const AddTransactionSheet(),
+      builder: (_) => AddTransactionSheet(transactionToEdit: transactionToEdit),
     );
   }
 
@@ -57,10 +58,30 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   String _numStr = '';
   String _category = _incomeCategories.first;
   final _descController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.transactionToEdit != null) {
+      final tx = widget.transactionToEdit!;
+      _isIncome = tx.isIncome;
+      _numStr = tx.amount.toString();
+      if (_numStr.endsWith('.0')) {
+        _numStr = _numStr.substring(0, _numStr.length - 2);
+      }
+      _category = tx.category;
+      _descController.text = tx.description;
+      _notesController.text = tx.notes ?? '';
+    } else {
+      _category = _incomeCategories.first;
+    }
+  }
 
   @override
   void dispose() {
     _descController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -109,17 +130,30 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       return;
     }
 
-    final tx = TransactionModel(
-      amount: _parsedAmount,
-      description: _descController.text.trim().isEmpty
-          ? (_isIncome ? 'Ingreso' : 'Gasto')
-          : _descController.text.trim(),
-      category: _category,
-      isIncome: _isIncome,
-      date: DateTime.now(),
-    );
-
-    await ref.read(transactionProvider.notifier).addTransaction(tx);
+    if (widget.transactionToEdit != null) {
+      final tx = widget.transactionToEdit!.copyWith(
+        amount: _parsedAmount,
+        description: _descController.text.trim().isEmpty
+            ? (_isIncome ? 'Ingreso' : 'Gasto')
+            : _descController.text.trim(),
+        category: _category,
+        isIncome: _isIncome,
+        notes: _notesController.text.trim(),
+      );
+      await ref.read(transactionProvider.notifier).updateTransaction(tx);
+    } else {
+      final tx = TransactionModel(
+        amount: _parsedAmount,
+        description: _descController.text.trim().isEmpty
+            ? (_isIncome ? 'Ingreso' : 'Gasto')
+            : _descController.text.trim(),
+        category: _category,
+        isIncome: _isIncome,
+        date: DateTime.now(),
+        notes: _notesController.text.trim(),
+      );
+      await ref.read(transactionProvider.notifier).addTransaction(tx);
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -161,6 +195,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   @override
   Widget build(BuildContext context) {
     final activeColor = _isIncome ? AppColors.primary : AppColors.error;
+    final isEditing = widget.transactionToEdit != null;
 
     return Container(
       decoration: const BoxDecoration(
@@ -188,8 +223,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             // Título
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-              child: Text('Nueva Transacción',
-                  style: AppTextStyles.displayMedium.copyWith(fontSize: 18)),
+              child: Text(
+                isEditing ? 'Editar Transacción' : 'Nueva Transacción',
+                style: AppTextStyles.displayMedium.copyWith(fontSize: 18),
+              ),
             ),
 
             // Toggle ingreso / gasto
@@ -272,6 +309,45 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
               ),
             ),
 
+            // Notas detalladas
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2.0),
+                      child: Icon(Icons.description_outlined,
+                          color: AppColors.textHint, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _notesController,
+                        maxLines: 3,
+                        minLines: 1,
+                        style:
+                        AppTextStyles.labelLarge.copyWith(fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: 'Detalles adicionales / lo que compraste...',
+                          hintStyle: AppTextStyles.caption,
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             // Categoría y fecha
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
@@ -293,7 +369,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                     child: _InfoField(
                       icon: Icons.calendar_today_outlined,
                       label: 'FECHA',
-                      value: _formatDate(DateTime.now()),
+                      value: _formatDate(isEditing ? widget.transactionToEdit!.date : DateTime.now()),
                     ),
                   ),
                 ],
@@ -360,7 +436,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                           borderRadius: BorderRadius.circular(14)),
                     ),
                     child: Text(
-                      _isIncome ? 'Guardar Ingreso' : 'Guardar Gasto',
+                      isEditing ? 'Guardar Cambios' : (_isIncome ? 'Guardar Ingreso' : 'Guardar Gasto'),
                       style: AppTextStyles.labelLarge
                           .copyWith(color: Colors.white, fontSize: 15),
                     ),

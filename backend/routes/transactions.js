@@ -20,7 +20,7 @@ router.get('/', auth, async (req, res) => {
 // @desc    Create a new transaction
 // @access  Private
 router.post('/', auth, async (req, res) => {
-  const { amount, description, category, isIncome, date } = req.body;
+  const { amount, description, category, isIncome, date, notes } = req.body;
 
   try {
     if (amount === undefined || !description || !category || isIncome === undefined) {
@@ -33,7 +33,8 @@ router.post('/', auth, async (req, res) => {
       description,
       category,
       isIncome,
-      date: date ? new Date(date) : Date.now()
+      date: date ? new Date(date) : Date.now(),
+      notes: notes || ''
     });
 
     const transaction = await newTransaction.save();
@@ -41,6 +42,46 @@ router.post('/', auth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Error del servidor al registrar la transacción.' });
+  }
+});
+
+// @route   PATCH api/transactions/:id
+// @desc    Update a transaction
+// @access  Private
+router.patch('/:id', auth, async (req, res) => {
+  const { amount, description, category, isIncome, date, notes } = req.body;
+
+  try {
+    let transaction = await Transaction.findById(req.params.id);
+
+    if (!transaction) {
+      return res.status(404).json({ message: 'Transacción no encontrada.' });
+    }
+
+    // Verificar propiedad
+    if (transaction.userId.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'No autorizado para modificar esta transacción.' });
+    }
+
+    // Construir campos a actualizar
+    const fields = {};
+    if (amount !== undefined) fields.amount = amount;
+    if (description !== undefined) fields.description = description;
+    if (category !== undefined) fields.category = category;
+    if (isIncome !== undefined) fields.isIncome = isIncome;
+    if (date !== undefined) fields.date = new Date(date);
+    if (notes !== undefined) fields.notes = notes;
+
+    transaction = await Transaction.findByIdAndUpdate(
+      req.params.id,
+      { $set: fields },
+      { new: true }
+    );
+
+    res.json(transaction);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Error del servidor al actualizar la transacción.' });
   }
 });
 

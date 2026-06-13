@@ -24,10 +24,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   late List<Animation<double>> _fadeAnims;
   late List<Animation<Offset>> _slideAnims;
 
+  bool _rememberMe = false;
+
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final datasource = ref.read(authDatasourceProvider);
+    final credentials = await datasource.getSavedCredentials();
+    if (credentials.containsKey('email') && mounted) {
+      setState(() {
+        _emailController.text = credentials['email'] ?? '';
+        _passwordController.text = credentials['password'] ?? '';
+        _rememberMe = true;
+      });
+    }
   }
 
   void _setupAnimations() {
@@ -84,13 +99,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
     final success = await ref.read(authProvider.notifier).login(
-      _emailController.text,
-      _passwordController.text,
+      email,
+      password,
     );
 
     if (success && mounted) {
-      context.goNamed('home');
+      final datasource = ref.read(authDatasourceProvider);
+      await datasource.saveSavedCredentials(email, password, _rememberMe);
+      if (mounted) {
+        context.goNamed('home');
+      }
     }
   }
 
@@ -172,6 +194,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         }
                         return null;
                       },
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Remember me
+                  _animated(
+                    2,
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _rememberMe = !_rememberMe;
+                        });
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: _rememberMe ? AppColors.primary : Colors.transparent,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: _rememberMe ? AppColors.primary : AppColors.surfaceLight,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _rememberMe
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Recordar mis datos',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
